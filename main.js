@@ -224,7 +224,7 @@ function removeTransaction(transactionId) {
  *  - Formulir kembali ke mode "Tambah" setelah pembaruan selesai.
  */
 
-function editTransaction(transactionId) {
+function editDataTransaction(transactionId) {
     const transactionTarget = findTransaction(transactionId);
     document.getElementById('transactionFormTitleInput').value = transactionTarget.title;
     document.getElementById('transactionFormAmountInput').value = transactionTarget.amount;
@@ -327,8 +327,13 @@ function makeTransaction(transactionObject) {
     const btnEditType = document.createElement('button');
     btnEditType.innerText = 'Ubah Tipe';
     btnEditType.setAttribute('data-testid', 'transactionItemEditTypeButton');
-    btnEditType.setAttribute('id', 'btn-edit-type');
     btnEditType.classList.add('tracker-transaction-item__btn');
+
+    const btnEditData = document.createElement('button');
+    btnEditData.innerText = 'Edit Data';
+    btnEditData.setAttribute('data-testid', 'transactionItemEditDataButton');
+    btnEditData.setAttribute('id', 'btn-edit-type');
+    btnEditData.classList.add('tracker-transaction-item__btn');
 
     const btnDelete = document.createElement('button');
     btnDelete.innerText = 'Hapus';
@@ -336,7 +341,7 @@ function makeTransaction(transactionObject) {
     btnDelete.classList.add('tracker-transaction-item__btn');
 
     const btnGroupCard = document.createElement('div');
-    btnGroupCard.append(btnEditType, btnDelete);
+    btnGroupCard.append(btnEditType, btnEditData, btnDelete);
     btnGroupCard.classList.add('tracker-transaction-item__actions')
 
     const containerRight = document.createElement('div');
@@ -349,8 +354,16 @@ function makeTransaction(transactionObject) {
     card.setAttribute('id', `transaction-${transactionObject.id}`);
     card.classList.add('tracker-transaction-item');
 
-    btnEditType.addEventListener('click', function () {
-        editTransaction(transactionObject.id);
+    btnEditType.addEventListener('click', function() {
+        if (transactionObject.type === 'income') {
+            moveTransactionToExpense(transactionObject.id);
+        } else {
+            moveTransactionToIncome(transactionObject.id);
+        }
+    });
+
+    btnEditData.addEventListener('click', function () {
+        editDataTransaction(transactionObject.id);
         if (document.getElementById('transactionFormTypeSelect').value === 'expense') {
             document.getElementById('transactionFormTypeSelect').value = 'income';
         } else {
@@ -364,6 +377,49 @@ function makeTransaction(transactionObject) {
 
     return card;
 };
+
+function moveTransactionToExpense (transactionId) {
+    const transactionTarget = findTransactionIndex(transactionId);
+
+    if (transactionTarget === -1) return;
+
+    transactions[transactionTarget].type = 'expense';
+    document.dispatchEvent(new Event(RENDER_EVENT));
+
+    saveData();
+}
+
+function moveTransactionToIncome (transactionId) {
+    const transactionTarget = findTransactionIndex(transactionId);
+
+    if (transactionTarget === -1) return;
+
+    transactions[transactionTarget].type = 'income';
+    document.dispatchEvent(new Event(RENDER_EVENT));
+
+    saveData();
+}
+
+/**
+ * TODO [Skilled]:
+ * Tambahkan event listener 'input' pada kolom pencarian:
+ *  - Filter array transaksi berdasarkan kecocokan kata kunci dengan judul transaksi
+ *  - Tampilkan hanya transaksi yang judulnya mengandung kata kunci tersebut
+ */
+
+const searchInput = document.getElementById('searchTransactionFormTitleInput');
+
+searchInput.addEventListener('input', function (event) {
+    searchKeyword = event.target.value.toLowerCase();
+    document.dispatchEvent(new Event(RENDER_EVENT));
+});
+
+
+/**
+ * TODO [Advanced]:
+ * Pastikan fitur pencarian berjalan dengan baik di semua kondisi:
+ *  - Saat kolom pencarian dikosongkan, tampilkan kembali seluruh daftar transaksi
+ */
 
 function updateChart() {
     let totalIncome = 0;
@@ -406,25 +462,4 @@ function updateChart() {
 
     incomeText.innerText = `Pemasukan: ${incomePercentage}%`;
     expenseText.innerText = `Pengeluaran: ${expensePercentage}%`;
-}
-
-/**
- * TODO [Skilled]:
- * Tambahkan event listener 'input' pada kolom pencarian:
- *  - Filter array transaksi berdasarkan kecocokan kata kunci dengan judul transaksi
- *  - Tampilkan hanya transaksi yang judulnya mengandung kata kunci tersebut
- */
-
-const searchInput = document.getElementById('searchTransactionFormTitleInput');
-
-searchInput.addEventListener('input', function (event) {
-    searchKeyword = event.target.value.toLowerCase();
-    document.dispatchEvent(new Event(RENDER_EVENT));
-});
-
-
-/**
- * TODO [Advanced]:
- * Pastikan fitur pencarian berjalan dengan baik di semua kondisi:
- *  - Saat kolom pencarian dikosongkan, tampilkan kembali seluruh daftar transaksi
- */
+};
